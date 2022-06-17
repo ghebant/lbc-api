@@ -1,0 +1,10 @@
+version: "3.9"
+
+services:
+  lbc-api:
+    build:
+      context: .
+    container_name: lbc-api
+#    env_file:
+#      - configuration/env/dev.env
+    command: go run cmd/lbc-api/main.go
