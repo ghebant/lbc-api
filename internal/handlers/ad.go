@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"context"
 	"database/sql"
 	"ghebant/lbc-api/internal/constants"
 	"ghebant/lbc-api/models"
@@ -47,7 +46,7 @@ func GetAd(db *sql.DB) gin.HandlerFunc {
 
 			err = row.Scan(&ad.ID, &ad.Title, &ad.Content, &ad.Category, &ad.CreatedAt, &ad.UpdatedAt)
 			if err != nil {
-				log.Println("no ad found for the provided id: " + err.Error())
+				log.Println("no ad found for the provided id:", err)
 				c.JSON(http.StatusNotFound, gin.H{"message": "no ad found for the provided id"})
 				return
 			}
@@ -58,8 +57,8 @@ func GetAd(db *sql.DB) gin.HandlerFunc {
 
 		queryRes, err := db.Query("SELECT * FROM ad")
 		if err != nil {
-			log.Println("error failed to query db: " + err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "failed to query db"})
+			log.Println("error failed to query db:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to query db"})
 			return
 		}
 		defer queryRes.Close()
@@ -69,8 +68,8 @@ func GetAd(db *sql.DB) gin.HandlerFunc {
 
 			err = queryRes.Scan(&ad.ID, &ad.Title, &ad.Content, &ad.Category, &ad.CreatedAt, &ad.UpdatedAt)
 			if err != nil {
-				log.Println("error while scanning ad: " + err.Error())
-				c.JSON(http.StatusInternalServerError, gin.H{"code": 500, "message": "failed to scan result"})
+				log.Println("no ad found:", err)
+				c.JSON(http.StatusNotFound, gin.H{"message": "no ad found"})
 				return
 			}
 
@@ -84,49 +83,84 @@ func GetAd(db *sql.DB) gin.HandlerFunc {
 func PostAd(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ad := models.Ad{}
+
 		err := c.ShouldBindJSON(&ad)
 		if err != nil {
 			log.Println("failed to read body", err)
 			return
 		}
 
-		insertQuery := "INSERT INTO ad(title, content, category) VALUES (?, ?, ?)"
+		_, err = db.Exec("INSERT INTO ad(title, content, category) VALUES (?, ?, ?)", ad.Title, ad.Content, ad.Category)
+		if err != nil {
+			log.Println("error failed to insert ad in db:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "error failed to insert ad in db"})
+			return
+		}
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		stmt, err := db.PrepareContext(ctx, insertQuery)
-		if err != nil {
-			log.Printf("Error %s when preparing SQL statement", err)
-			return
-		}
-		defer stmt.Close()
-		res, err := stmt.ExecContext(ctx, ad.Title, ad.Content, ad.Category)
-		if err != nil {
-			log.Printf("Error %s when inserting row into products table", err)
-			return
-		}
-		rows, err := res.RowsAffected()
-		if err != nil {
-			log.Printf("Error %s when finding rows affected", err)
-			return
-		}
-		log.Printf("%d products created ", rows)
-
-		c.JSON(http.StatusOK, gin.H{"code": 200, "message": "post"})
-		//c.IndentedJSON()
+		c.JSON(http.StatusCreated, gin.H{"message": "created"})
 	}
 }
 
 func UpdateAd(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"code": 200, "message": "edit"})
-		//c.IndentedJSON()
+		ad := models.Ad{}
+
+		id := c.Param("id")
+		adId, err := strconv.Atoi(id)
+		if err != nil {
+			log.Println("failed to convert id:", err)
+			c.JSON(http.StatusBadRequest, gin.H{"message": "failed to convert id"})
+			return
+		}
+
+		err = c.ShouldBindJSON(&ad)
+		if err != nil {
+			log.Println("failed to read body", err)
+			return
+		}
+
+		res, err := db.Exec("UPDATE ad SET title = ?, content = ?, category = ?, updated_at = ? WHERE ad_id = ?", ad.Title, ad.Content, ad.Category, time.Now(), adId)
+		if err != nil {
+			log.Println("error failed to update ad in db:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "error failed to update ad in db"})
+			return
+		}
+
+		row, _ := res.RowsAffected()
+		if row <= 0 {
+			log.Println("failed to update ad: not found :", err)
+			c.JSON(http.StatusNotFound, gin.H{"message": "failed to update ad: not found"})
+			return
+		}
+
+		c.JSON(http.StatusCreated, gin.H{"message": "updated"})
 	}
 }
 
 func DeleteAd(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"code": 200, "message": "delete"})
-		//c.IndentedJSON()
+		id := c.Param("id")
+		adId, err := strconv.Atoi(id)
+		if err != nil {
+			log.Println("failed to convert id:", err)
+			c.JSON(http.StatusBadRequest, gin.H{"message": "failed to convert id"})
+			return
+		}
+
+		res, err := db.Exec("DELETE FROM ad WHERE ad_id = ?", adId)
+		if err != nil {
+			log.Println("error failed to delete ad in db:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "error failed to delete ad in db"})
+			return
+		}
+
+		row, _ := res.RowsAffected()
+		if row <= 0 {
+			log.Println("failed to delete ad: not found :", err)
+			c.JSON(http.StatusNotFound, gin.H{"message": "failed to delete ad: not found"})
+			return
+		}
+
+		c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 	}
 }
