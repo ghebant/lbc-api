@@ -1,6 +1,22 @@
 version: "3.9"
 
 services:
+  db:
+    image: mysql:8.0
+    container_name: lbc-api_db
+    ports:
+      - "3307:3306"
+    restart: always
+    env_file:
+      - configuration/env/dev.env
+    cap_add:
+      - SYS_NICE
+#    environment:
+#      MYSQL_DATABASE: 'lbc-api_development'
+#      MYSQL_USER: 'user'
+#      MYSQL_PASSWORD: 'root'
+#      MYSQL_ROOT_PASSWORD: 'root'
+
   lbc-api:
     build:
       context: .
@@ -12,3 +28,5 @@ services:
       - ./:/go/lbc-api
     env_file:
       - configuration/env/dev.env
+    depends_on:
+      - db
