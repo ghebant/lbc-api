@@ -1,6 +1,7 @@
 FROM        golang:1.18-alpine3.16 as base
 
 WORKDIR     /go/lbc-api
+RUN         apk -u add build-base bash
 
 FROM        base as dev
 RUN         wget https://github.com/cortesi/modd/releases/download/v0.8/modd-0.8-linux64.tgz

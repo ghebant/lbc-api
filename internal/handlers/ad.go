@@ -2,49 +2,35 @@ package handlers
 
 import (
 	"database/sql"
-	"ghebant/lbc-api/internal/constants"
+	"ghebant/lbc-api/internal/helpers"
 	"ghebant/lbc-api/models"
 	"github.com/gin-gonic/gin"
-	"gopkg.in/errgo.v2/errors"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
 )
 
-// Todo put in helper
-func FindRow(db *sql.DB, idStr, key string) (*sql.Row, int, error) {
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		return nil, http.StatusBadRequest, errors.New("failed to convert id: " + err.Error())
-	}
-
-	query := "SELECT * FROM ad WHERE " + key + " = ?"
-	res := db.QueryRow(query, id)
-	if err != nil {
-		return nil, http.StatusNotFound, errors.New("no ad found for the provided id: " + err.Error())
-	}
-
-	return res, http.StatusOK, nil
-}
-
 func GetAd(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ads := []models.Ad{}
 
+		// TODO everywhere ?
+		c.Header("Content-Type", "application/json")
+
 		// Find ad by ID
-		adId := c.Param("id")
-		if adId != "" {
+		idStr := c.Param("id")
+		if idStr != "" {
 			var ad models.Ad
 
-			row, status, err := FindRow(db, adId, constants.AdPrimaryKey)
+			adId, err := strconv.Atoi(idStr)
 			if err != nil {
-				log.Println(err)
-				c.JSON(status, gin.H{"message": err.Error()})
+				log.Println("failed to convert id:", err)
+				c.JSON(http.StatusBadRequest, gin.H{"message": "failed to convert id"})
 				return
 			}
 
-			err = row.Scan(&ad.ID, &ad.Title, &ad.Content, &ad.Category, &ad.CreatedAt, &ad.UpdatedAt)
+			ad, err = helpers.FindAdById(db, adId)
 			if err != nil {
 				log.Println("no ad found for the provided id:", err)
 				c.JSON(http.StatusNotFound, gin.H{"message": "no ad found for the provided id"})
@@ -58,7 +44,7 @@ func GetAd(db *sql.DB) gin.HandlerFunc {
 		queryRes, err := db.Query("SELECT * FROM ad")
 		if err != nil {
 			log.Println("error failed to query db:", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to query db"})
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "Cannot fetch ads"})
 			return
 		}
 		defer queryRes.Close()
@@ -87,17 +73,28 @@ func PostAd(db *sql.DB) gin.HandlerFunc {
 		err := c.ShouldBindJSON(&ad)
 		if err != nil {
 			log.Println("failed to read body", err)
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 			return
 		}
 
-		_, err = db.Exec("INSERT INTO ad(title, content, category) VALUES (?, ?, ?)", ad.Title, ad.Content, ad.Category)
+		res, err := db.Exec("INSERT INTO ad(title, content, category) VALUES (?, ?, ?)", ad.Title, ad.Content, ad.Category)
 		if err != nil {
 			log.Println("error failed to insert ad in db:", err)
 			c.JSON(http.StatusInternalServerError, gin.H{"message": "error failed to insert ad in db"})
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{"message": "created"})
+		// Return created ad
+		lastId, _ := res.LastInsertId()
+
+		ad, err = helpers.FindAdById(db, int(lastId))
+		if err != nil {
+			log.Println("failed to retrieve created ad:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to retrieve created ad"})
+			return
+		}
+
+		c.JSON(http.StatusCreated, ad)
 	}
 }
 
@@ -105,8 +102,8 @@ func UpdateAd(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ad := models.Ad{}
 
-		id := c.Param("id")
-		adId, err := strconv.Atoi(id)
+		idStr := c.Param("id")
+		adId, err := strconv.Atoi(idStr)
 		if err != nil {
 			log.Println("failed to convert id:", err)
 			c.JSON(http.StatusBadRequest, gin.H{"message": "failed to convert id"})
@@ -116,6 +113,7 @@ func UpdateAd(db *sql.DB) gin.HandlerFunc {
 		err = c.ShouldBindJSON(&ad)
 		if err != nil {
 			log.Println("failed to read body", err)
+			c.JSON(http.StatusBadRequest, gin.H{"message": err.Error()})
 			return
 		}
 
@@ -133,14 +131,22 @@ func UpdateAd(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusCreated, gin.H{"message": "updated"})
+		// Return created ad
+		ad, err = helpers.FindAdById(db, adId)
+		if err != nil {
+			log.Println("failed to retrieve updated ad:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "failed to retrieve updated ad"})
+			return
+		}
+
+		c.JSON(http.StatusOK, ad)
 	}
 }
 
 func DeleteAd(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		id := c.Param("id")
-		adId, err := strconv.Atoi(id)
+		idStr := c.Param("id")
+		adId, err := strconv.Atoi(idStr)
 		if err != nil {
 			log.Println("failed to convert id:", err)
 			c.JSON(http.StatusBadRequest, gin.H{"message": "failed to convert id"})

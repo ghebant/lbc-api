@@ -1,25 +1,24 @@
 dev:
 	@echo "Running dev"
 	@docker-compose -f docker-compose.dev.yml up 	\
-			--build									\
+#			--build									\
 			--force-recreate 						\
 			--quiet-pull							\
 			--no-color								\
 			--remove-orphans 						\
 			--timeout 20
-	@docker-compose rm -f
+	@docker-compose -f docker-compose.dev.yml rm -f
 
 test:
 	@echo "Running tests"
 	@docker-compose -f docker-compose.test.yml up 	\
-	    --build \
 			--abort-on-container-exit				\
 			--force-recreate 						\
 			--no-color								\
 			--remove-orphans 						\
 			--timeout 20
 	@docker-compose -f docker-compose.test.yml down
-	@docker-compose -f docker-compose.test.yml rm -f
+#	@docker-compose -f docker-compose.test.yml rm -f
 
 test-coverage:
 	mkdir -p reports
