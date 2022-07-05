@@ -42,6 +42,40 @@ func NormalizeKeywords(keywords []string) []string {
 	return cleanKeywords
 }
 
+// TEXT = MODEL && PATTERN = INPUT
+func AnotherOne(text, pattern string) {
+
+	count := 0
+	best := 0
+
+	startIndex := 0
+	for i := 0; i < len(text); i++ {
+		for j := 0; j < len(pattern); j++ {
+			if text[i] != pattern[j] {
+				j = 0
+
+				if count > 0 {
+					i = startIndex + 1
+				}
+
+				if count > best {
+					best = count
+				}
+			}
+
+			if text[i] == pattern[j] {
+				if count == 0 {
+					startIndex = i
+				}
+
+				count += 1
+			}
+		}
+	}
+
+	log.Println("max matching characters:", best)
+}
+
 // zabcd
 // mabzd
 // TODO Utiliser algo Longest Common Substring
@@ -53,14 +87,14 @@ func LongestCommonSubstrings(needle, word string) []string {
 	// wordeas    worldeas
 
 	// https://www.youtube.com/results?search_query=Longest+Common+Substring+golang
-	for i := 0; i <= len(needle); i++ {
-		for j := 0; j <= len(word); j++ {
-			log.Printf("needle[%d] %s word[%d] %s count %d", i, string(needle[i]), j, string(word[j]), count)
+	for i := 0; i < len(needle); i++ {
+		for j := 0; j < len(word); j++ {
+			//log.Printf("needle[%d] %s word[%d] %s count %d", i, string(needle[i]), j, string(word[j]), count)
 
 			if word[j] != needle[i] && count > 0 {
-				log.Println("matchStartAt", matchStartAt, "j", j)
+				//log.Println("matchStartAt", matchStartAt, "j", j)
 				subStrings = append(subStrings, word[matchStartAt:j])
-				log.Println("found sub string:", word[matchStartAt:j])
+				//log.Println("found sub string:", word[matchStartAt:j])
 				count = 0
 			}
 
@@ -75,12 +109,50 @@ func LongestCommonSubstrings(needle, word string) []string {
 		}
 	}
 
-	log.Println("subs", subStrings)
+	//log.Println("subs", subStrings)
 
 	return nil
 }
 
-func Lcs2(str1, str2 string) int {
+func pdr(str1, str2 string) int {
+	m := len(str1)
+	n := len(str2)
+
+	var LCSuff = make([][]int, m+1)
+	for i := range LCSuff {
+		LCSuff[i] = make([]int, n+1)
+	}
+
+	//subStrings := []string{}
+
+	var result = 0
+
+	for i := 0; i <= m; i++ {
+		for j := 0; j <= n; j++ {
+
+			if i == 0 || j == 0 {
+				LCSuff[i][j] = 0
+			} else if str1[i-1] == str2[j-1] {
+				LCSuff[i][j] = LCSuff[i-1][j-1] + 1
+				result = max(result, LCSuff[i][j])
+				//log.Printf("LCSuff[i][j] %d result %d", LCSuff[i][j], result)
+			} else {
+				LCSuff[i][j] = 0
+			}
+		}
+	}
+	return result
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+
+	return b
+}
+
+func try(str1, str2 string) int {
 	var T = make([][]int, len(str1))
 	for i := range T {
 		T[i] = make([]int, len(str2))
