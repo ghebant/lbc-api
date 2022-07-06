@@ -7,6 +7,7 @@ import (
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
 	"log"
+	"math"
 	"net/http"
 	"strings"
 	"unicode"
@@ -15,7 +16,7 @@ import (
 // TODO
 // Lowercase everything
 
-func removeAccents(s string) string {
+func RemoveAccents(s string) string {
 	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
 	output, _, e := transform.String(t, s)
 	if e != nil {
@@ -25,152 +26,157 @@ func removeAccents(s string) string {
 	return output
 }
 
-func NormalizeKeywords(keywords []string) []string {
-	var cleanKeywords []string
+func NormalizeString(str string) string {
+	// lower case
+	str = strings.ToLower(str)
+	// remove accents
+	str = RemoveAccents(str)
 
-	for _, keyword := range keywords {
-		// lower case
-		keyword = strings.ToLower(keyword)
-		// remove spaces
-		keyword = strings.TrimSpace(keyword)
-		// remove accents
-		keyword = removeAccents(keyword)
-
-		cleanKeywords = append(cleanKeywords, keyword)
-	}
-
-	return cleanKeywords
+	return str
 }
 
-// TEXT = MODEL && PATTERN = INPUT
-func AnotherOne(text, pattern string) {
+type SearchKeyword struct {
+	Keyword string
+	// nb changements
+	DistanceFromModel  int
+	MatchingPercentage float64
+}
 
-	count := 0
-	best := 0
+type BestMatch struct {
+	brand                  string
+	model                  string
+	inputs                 []SearchKeyword
+	distance               int
+	averageMatchingPercent float64
+}
 
-	startIndex := 0
-	for i := 0; i < len(text); i++ {
-		for j := 0; j < len(pattern); j++ {
-			if text[i] != pattern[j] {
-				j = 0
+func SearchCar(search string) BestMatch {
+	Vehicles := map[string][]string{
+		"Audi":    {"Cabriolet", "Q2", "Q3", "Q5", "Q7", "Q8", "R8", "Rs3", "Rs4", "Rs5", "Rs7", "S3", "S4", "S4 Avant", "S4 Cabriolet", "S5", "S7", "S8", "SQ5", "SQ7", "Tt", "Tts", "V8"},
+		"BMW":     {"M3", "M4", "M5", "M535", "M6", "M635", "Serie 1", "Serie 2", "Serie 3", "Serie 4", "Serie 5", "Serie 6", "Serie 7", "Serie 8"},
+		"Citroen": {"C1", "C15", "C2", "C25", "C25D", "C25E", "C25TD", "C3", "C3 Aircross", "C3 Picasso", "C4", "C4 Picasso", "C5", "C6", "C8", "Ds3", "Ds4", "Ds5"},
+	}
 
-				if count > 0 {
-					i = startIndex + 1
-				}
+	search = NormalizeString(search)
 
-				if count > best {
-					best = count
-				}
+	searchKeywords := strings.Split(search, " ")
+
+	VehiclesScore := make(map[string]map[string][]SearchKeyword)
+
+	currentBestMatch := BestMatch{"", "", []SearchKeyword{}, 100, 0}
+
+	//var bestMatches []BestMatch
+
+	// TODO make func ComputeScores()
+	for carBrand, carModels := range Vehicles {
+		for _, carModel := range carModels {
+			carModel = NormalizeString(carModel)
+
+			// If search correspond exactly
+			if carModel == search {
+				currentBestMatch.distance = 0
+				currentBestMatch.model = carModel
+				currentBestMatch.brand = carBrand
+
+				// Finner found
+				return currentBestMatch
 			}
 
-			if text[i] == pattern[j] {
-				if count == 0 {
-					startIndex = i
+			var keywordsWithScores []SearchKeyword
+
+			for i := range searchKeywords {
+				// For each keyword compute distance between the keyword and the car model
+				distance := levenshtein.Levenshtein(searchKeywords[i], carModel)
+
+				if VehiclesScore[carBrand] == nil {
+					VehiclesScore[carBrand] = make(map[string][]SearchKeyword)
 				}
 
-				count += 1
+				// Compute how much percentage of the search keyword is present in the car model
+				matchingPercentage := ComputeMatchingPercentage(len(carModel), distance)
+
+				keywordWithScore := SearchKeyword{
+					Keyword:            searchKeywords[i],
+					DistanceFromModel:  distance,
+					MatchingPercentage: matchingPercentage,
+				}
+
+				//VehiclesScore[carBrand][carModel] = append(VehiclesScore[carBrand][carModel], scoredInput)
+				keywordsWithScores = append(keywordsWithScores, keywordWithScore)
+			}
+
+			globalDistance, averageMatchingPercent := ComputeScores(keywordsWithScores)
+
+			if averageMatchingPercent >= currentBestMatch.averageMatchingPercent {
+				if averageMatchingPercent == currentBestMatch.averageMatchingPercent {
+					// TODO
+				}
+
+				currentBestMatch.distance = globalDistance
+				currentBestMatch.model = carModel
+				currentBestMatch.brand = carBrand
+				currentBestMatch.inputs = keywordsWithScores
+				currentBestMatch.averageMatchingPercent = averageMatchingPercent
+				// Replace the worst match in the top 3 list by the new best match
+				//bestMatches = Top3BestMatches(currentBestMatch, bestMatches)
 			}
 		}
 	}
 
-	log.Println("max matching characters:", best)
+	winner := currentBestMatch
+	//log.Println("bestMatches", bestMatches)
+	//log.Println("winner", winner)
+
+	return winner
 }
 
-// zabcd
-// mabzd
-// TODO Utiliser algo Longest Common Substring
-func LongestCommonSubstrings(needle, word string) []string {
-	var subStrings []string
-	count := 0
-	matchStartAt := 0
+// ComputeScores returns the global distance and the global average matching percentage of the keywords
+func ComputeScores(keywords []SearchKeyword) (int, float64) {
+	globalDistance := 0
+	averageMatchingPercentage := 0.0
 
-	// wordeas    worldeas
+	for i := range keywords {
+		globalDistance += keywords[i].DistanceFromModel
 
-	// https://www.youtube.com/results?search_query=Longest+Common+Substring+golang
-	for i := 0; i < len(needle); i++ {
-		for j := 0; j < len(word); j++ {
-			//log.Printf("needle[%d] %s word[%d] %s count %d", i, string(needle[i]), j, string(word[j]), count)
-
-			if word[j] != needle[i] && count > 0 {
-				//log.Println("matchStartAt", matchStartAt, "j", j)
-				subStrings = append(subStrings, word[matchStartAt:j])
-				//log.Println("found sub string:", word[matchStartAt:j])
-				count = 0
-			}
-
-			if word[j] == needle[i] {
-				if count <= 0 {
-					matchStartAt = j
-				}
-				i += 1
-				count += 1
-			}
-
+		if keywords[i].MatchingPercentage > 0 {
+			averageMatchingPercentage += keywords[i].MatchingPercentage
 		}
 	}
 
-	//log.Println("subs", subStrings)
+	averageMatchingPercentage = averageMatchingPercentage / float64(len(keywords))
 
-	return nil
+	return globalDistance, averageMatchingPercentage
 }
 
-func pdr(str1, str2 string) int {
-	m := len(str1)
-	n := len(str2)
-
-	var LCSuff = make([][]int, m+1)
-	for i := range LCSuff {
-		LCSuff[i] = make([]int, n+1)
+func Top3BestMatches(match BestMatch, bestMatches []BestMatch) []BestMatch {
+	if len(bestMatches) < 3 || len(bestMatches) == 0 {
+		bestMatches = append(bestMatches, match)
+		return bestMatches
 	}
 
-	//subStrings := []string{}
-
-	var result = 0
-
-	for i := 0; i <= m; i++ {
-		for j := 0; j <= n; j++ {
-
-			if i == 0 || j == 0 {
-				LCSuff[i][j] = 0
-			} else if str1[i-1] == str2[j-1] {
-				LCSuff[i][j] = LCSuff[i-1][j-1] + 1
-				result = max(result, LCSuff[i][j])
-				//log.Printf("LCSuff[i][j] %d result %d", LCSuff[i][j], result)
-			} else {
-				LCSuff[i][j] = 0
-			}
+	// TODO JE RECALCUL QUI EST LE MAILLEUR A CHAQUE FOIS -> PAS BON
+	// TODO CALCULER ME MEILLEUR UNE FOIS ET COMPARER match AVEC
+	// Find which input has the worst matching percent and replace it by the current match if it's higher
+	worstMatchIndex := 0
+	worstMatchingPercent := 1000.0
+	for i := range bestMatches {
+		if bestMatches[i].averageMatchingPercent < worstMatchingPercent {
+			worstMatchIndex = i
+			worstMatchingPercent = bestMatches[i].averageMatchingPercent
 		}
 	}
-	return result
+
+	if match.averageMatchingPercent > worstMatchingPercent {
+		bestMatches[worstMatchIndex] = match
+	}
+
+	return bestMatches
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-
-	return b
-}
-
-func try(str1, str2 string) int {
-	var T = make([][]int, len(str1))
-	for i := range T {
-		T[i] = make([]int, len(str2))
-	}
-
-	var max = 0
-
-	for i := 1; i <= len(str1); i++ {
-		for j := 1; j <= len(str2); j++ {
-			if str1[i-1] == str2[j-1] {
-				T[i][j] = T[i-1][j-1] + 1
-				if max < T[i][j] {
-					max = T[i][j]
-				}
-			}
-		}
-	}
-	return max
+// Calculates the percentage of a Keyword A matching another Keyword B based on Keyword B length and Keyword's A distance from Keyword B
+func ComputeMatchingPercentage(modelLength, distanceFromWord int) float64 {
+	matchPercent := 100 - (float64(distanceFromWord)*100)/float64(modelLength)
+	return math.Round(matchPercent*100) / 100
 }
 
 func Search(c *gin.Context) {
