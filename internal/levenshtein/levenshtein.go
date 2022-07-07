@@ -1,5 +1,6 @@
 package levenshtein
 
+// Levenshtein computes the distance from word1 to word2
 func Levenshtein(word1, word2 string) int {
 	cost := 0
 	word1Len := len(word1)

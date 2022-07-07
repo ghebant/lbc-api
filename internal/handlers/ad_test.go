@@ -208,7 +208,12 @@ func TestUpdateAd(t *testing.T) {
 			Content:  "testContent_post1",
 			Category: "",
 		}},
-		{"Put ad invalid id", fmt.Sprintf("%s/%d", constants.AdPath, 111), http.StatusNotFound, false, models.Ad{
+		{"Put ad id not exist", fmt.Sprintf("%s/%d", constants.AdPath, 111), http.StatusNotFound, false, models.Ad{
+			Title:    "test",
+			Content:  "test",
+			Category: "test",
+		}},
+		{"Put ad invalid id", constants.AdPath + "/a", http.StatusBadRequest, false, models.Ad{
 			Title:    "test",
 			Content:  "test",
 			Category: "test",
