@@ -1,19 +1,12 @@
 package models
 
+import "time"
+
 type Automobile struct {
-	name  string `json:"name"`
-	brand string `json:"brand"`
-	model string `json:"model"`
-}
-
-func (a Automobile) Name() string {
-	return a.name
-}
-
-func (a Automobile) Brand() string {
-	return a.brand
-}
-
-func (a Automobile) Model() string {
-	return a.model
+	ID        int       `json:"id" db:"automobile_id"`
+	AdId      int       `json:"ad_id"`
+	Brand     string    `json:"brand" binding:"required""`
+	Model     string    `json:"model" binding:"required""`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

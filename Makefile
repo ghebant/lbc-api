@@ -1,7 +1,6 @@
 dev:
 	@echo "Running dev"
 	@docker-compose -f docker-compose.dev.yml up 	\
-			--build									\
 			--force-recreate 						\
 			--quiet-pull							\
 			--no-color								\
@@ -12,7 +11,6 @@ dev:
 test:
 	@echo "Running tests"
 	@docker-compose -f docker-compose.test.yml up 	\
-			--build 								\
 			--abort-on-container-exit				\
 			--force-recreate 						\
 			--no-color								\
@@ -23,7 +21,7 @@ test:
 
 test-coverage:
 	mkdir -p reports
-	go test -cover ./... -coverprofile ./reports/coverage.out -coverpkg ./...
+	make test
 	go tool cover -func ./reports/coverage.out
 
 .PHONY: all test dev test-coverage

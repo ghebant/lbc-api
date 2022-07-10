@@ -18,17 +18,7 @@ func main() {
 
 	log.Println("Connected to DB successfully")
 
-	err = helpers.CreateAdTable(db)
-	if err != nil {
-		log.Fatalf("Failed to initialize to database: %s", err)
-	}
-
-	err = helpers.CreateCategoryTable(db)
-	if err != nil {
-		log.Fatalf("Failed to initialize to database: %s", err)
-	}
-
-	err = helpers.InsertCategories(db)
+	err = helpers.CreateTables(db)
 	if err != nil {
 		log.Fatalf("Failed to initialize to database: %s", err)
 	}
