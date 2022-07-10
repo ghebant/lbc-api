@@ -55,7 +55,25 @@ func CreateAdTable(db *sql.DB) error {
 
 	_, err := db.ExecContext(ctx, createTableQuery)
 	if err != nil {
-		return errors.New("Failed to create table ad: " + err.Error())
+		return errors.New("Failed to create ad table: " + err.Error())
+	}
+
+	return nil
+}
+
+func CreateCategoryTable(db *sql.DB) error {
+	createTableQuery := "CREATE TABLE IF NOT EXISTS category(category_id int primary key auto_increment, " +
+		"brand text, " +
+		"model text, " +
+		"created_at TIMESTAMP default CURRENT_TIMESTAMP, " +
+		"updated_at TIMESTAMP default CURRENT_TIMESTAMP)"
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	_, err := db.ExecContext(ctx, createTableQuery)
+	if err != nil {
+		return errors.New("Failed to create category table: " + err.Error())
 	}
 
 	return nil
@@ -74,6 +92,22 @@ func InsertAds(ads []models.Ad, db *sql.DB) error {
 		}
 		lastId, _ := res.LastInsertId()
 		ads[i].ID = int(lastId)
+	}
+
+	return nil
+}
+
+func InsertCategories(db *sql.DB) error {
+	stmt, err := db.Prepare("INSERT INTO category(brand, model) VALUES (?, ?)")
+	if err != nil {
+		return errors.New("failed to create sql prepare statement: " + err.Error())
+	}
+
+	for brand, model := range constants.Vehicles {
+		_, err := stmt.Exec(brand, model)
+		if err != nil {
+			return errors.New("failed to insert vehicles in db: " + err.Error())
+		}
 	}
 
 	return nil

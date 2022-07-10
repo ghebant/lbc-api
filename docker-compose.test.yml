@@ -33,7 +33,7 @@ services:
     environment:
       MYSQL_DATABASE: 'lbc-api_test'
       MYSQL_HOST: 'db_test'
-    entrypoint: ['make', 'test-coverage']
+    entrypoint: ['go', 'test', './...']
     depends_on:
       db_test:
         condition: service_healthy

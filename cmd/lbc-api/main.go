@@ -23,6 +23,16 @@ func main() {
 		log.Fatalf("Failed to initialize to database: %s", err)
 	}
 
+	err = helpers.CreateCategoryTable(db)
+	if err != nil {
+		log.Fatalf("Failed to initialize to database: %s", err)
+	}
+
+	err = helpers.InsertCategories(db)
+	if err != nil {
+		log.Fatalf("Failed to initialize to database: %s", err)
+	}
+
 	router := handlers.SetupRouter(db)
 	log.Println("Running !")
 

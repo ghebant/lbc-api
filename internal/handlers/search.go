@@ -9,11 +9,11 @@ import (
 )
 
 func Search(c *gin.Context) {
-	queryParam := c.Param("input")
+	queryParam := c.Query("input")
 
 	if len(queryParam) <= 0 {
 		log.Println("input is empty")
-		c.JSON(http.StatusBadRequest, gin.H{"message": "input must be provided"})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "an input must be provided"})
 		return
 	}
 

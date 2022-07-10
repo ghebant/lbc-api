@@ -4,8 +4,8 @@ package constants
 const (
 	HealthPath   = "/"
 	SearchPath   = "/search"
-	AdPath       = "/ad"
-	AdWithIdPath = "/ad/:id"
+	AdPath       = "/ads"
+	AdWithIdPath = "/ads/:id"
 )
 
 // Mysql

@@ -23,6 +23,8 @@ func NormalizeString(str string) string {
 	str = strings.ToLower(str)
 	// remove accents
 	str = RemoveAccents(str)
+	// remove spaces at beginning and ending of string
+	str = strings.TrimSpace(str)
 
 	return str
 }
