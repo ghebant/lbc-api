@@ -4,7 +4,6 @@ import (
 	"ghebant/lbc-api/internal/constants"
 	"ghebant/lbc-api/models"
 	"github.com/stretchr/testify/assert"
-	"log"
 	"testing"
 )
 
@@ -36,19 +35,34 @@ func TestFindBestMatch(t *testing.T) {
 	}
 }
 
-// TODO Refacto
-func TestFindBest(t *testing.T) {
-	search := "s4"
-	carModel := "s4 avant"
-	carModel2 := "s4"
+func TestComputeMatch(t *testing.T) {
+	tests := []struct {
+		id              int
+		search          string
+		model           string
+		expectedAverage float64
+	}{
+		{0, "Gran Turismo Série5", "serie 5", 18.86},
+		{1, "ds 3 crossback", "ds3", 35.56},
+		{2, "crossback ds 3", "ds3", 35.56},
+		{3, "test avant", "s4 avant", 85.17},
+		{4, "s4 avant", "s4 avant", 1000},
+		{5, "avant s4", "s4 avant", 127.92},
+		{6, "cabr", "cabriolet", 68.14},
+		{7, "s4 av", "s4 avant", 73.67},
+		{8, "s4 cab", "s4 cabriolet", 71.39},
+		{9, "serie5", "serie 5", 148.35},
+		{10, "s4", "s4", 1000},
+	}
 
-	match := FindBest(search, carModel)
-	match2 := FindBest(search, carModel2)
-	log.Println(match)
-	log.Println(match2)
+	for i := range tests {
+		match := ComputeMatch(tests[i].search, tests[i].model)
+
+		assert.Equal(t, tests[i].expectedAverage, match.AverageMatchingPercent, "test %d failed", tests[i].id)
+	}
 }
 
-func TestComputeBeginning(t *testing.T) {
+func TestComputeCharactersMatching(t *testing.T) {
 	tests := []struct {
 		id         int
 		str1, str2 string
@@ -66,7 +80,7 @@ func TestComputeBeginning(t *testing.T) {
 	}
 
 	for i := range tests {
-		percentage := ComputeBeginning(tests[i].str1, tests[i].str2)
+		percentage := ComputeCharactersMatching(tests[i].str1, tests[i].str2)
 
 		assert.Equalf(t, tests[i].expected, percentage, "test %d failed", tests[i].id)
 	}
@@ -74,16 +88,18 @@ func TestComputeBeginning(t *testing.T) {
 
 func TestComputeKeywordsScores(t *testing.T) {
 	tests := []struct {
+		id       int
 		carModel string
 		keywords []string
 		expected []models.KeywordWithScore
 	}{
 		{
+			0,
 			"ds3",
 			[]string{"ds", "3"},
 			[]models.KeywordWithScore{
-				{"ds", -999, "", -999, 0},
-				{"3", -999, "", -999, 0},
+				{"ds", 84.44711111111111},
+				{"3", 22.22},
 			},
 		},
 	}
@@ -94,8 +110,7 @@ func TestComputeKeywordsScores(t *testing.T) {
 
 			assert.Equal(t, len(tests[i].expected), len(keywordsGot))
 			assert.Equal(t, exp.Keyword, keywordsGot[j].Keyword)
-			assert.Truef(t, keywordsGot[j].DistanceFromModel > 0, "\"%s\" keyword distance is inferior to 0: %d", keywordsGot[j].Keyword, keywordsGot[j].DistanceFromModel)
-			assert.Truef(t, keywordsGot[j].MatchingPercentage > 0, "\"%s\" keyword matching is inferior to 0: %f", keywordsGot[j].Keyword, keywordsGot[j].MatchingPercentage)
+			assert.Equalf(t, exp.MatchingPercentage, keywordsGot[j].MatchingPercentage, "test %d failed", tests[i].id)
 		}
 	}
 }
@@ -129,9 +144,9 @@ func TestComputeGlobalScores(t *testing.T) {
 		{
 			0,
 			[]models.KeywordWithScore{
-				{"ds", 1, "", 67, 0},
-				{"3", 2, "", 34, 0},
-				{"crossback", 8, "", 0, 0},
+				{"ds", 67},
+				{"3", 34},
+				{"crossback", 0},
 			},
 			11,
 			33.67,
@@ -139,8 +154,8 @@ func TestComputeGlobalScores(t *testing.T) {
 		{
 			1,
 			[]models.KeywordWithScore{
-				{"test", 4, "", 18, 0},
-				{"avant", 4, "", 34, 0},
+				{"test", 18},
+				{"avant", 34},
 			},
 			8,
 			26,
@@ -154,9 +169,8 @@ func TestComputeGlobalScores(t *testing.T) {
 	}
 
 	for i := range tests {
-		globalDistance, globalAverage := ComputeGlobalScores(tests[i].keywords)
+		globalAverage := ComputeGlobalScores(tests[i].keywords)
 
-		assert.Equalf(t, tests[i].expectedDistance, globalDistance, "test %d failed", tests[i].id)
 		assert.Equalf(t, tests[i].expectedAverage, globalAverage, "test %d failed", tests[i].id)
 	}
 }

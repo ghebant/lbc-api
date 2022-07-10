@@ -16,9 +16,6 @@ func GetAd(db *sql.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ads := []models.Ad{}
 
-		// TODO everywhere ?
-		c.Header("Content-Type", "application/json")
-
 		// Find ad by ID
 		idStr := c.Param("id")
 		if idStr != "" {
