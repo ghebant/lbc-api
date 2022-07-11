@@ -10,11 +10,7 @@ import (
 
 func RemoveAccents(s string) string {
 	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
-	output, _, e := transform.String(t, s)
-	if e != nil {
-		// TODO add error management
-		panic(e)
-	}
+	output, _, _ := transform.String(t, s)
 	return output
 }
 
