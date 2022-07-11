@@ -1,5 +1,5 @@
 # lbc-api
-Description
+API used to create, modify, delete, get an ad and search for a model car.
 
 # Start the api
 Start dev
