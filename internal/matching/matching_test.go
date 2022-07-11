@@ -14,17 +14,17 @@ func TestFindBestMatch(t *testing.T) {
 		expectedBrand string
 		expectedModel string
 	}{
-		{0, "Gran Turismo Série5", "BMW", "serie 5"},
-		{1, "ds 3 crossback", "Citroen", "ds3"},
-		{2, "crossback ds 3", "Citroen", "ds3"},
-		{3, "test avant", "Audi", "s4 avant"},
-		{4, "s4 avant", "Audi", "s4 avant"},
-		{5, "avant s4", "Audi", "s4 avant"},
-		{6, "cabr", "Audi", "cabriolet"},
-		{7, "s4 av", "Audi", "s4 avant"},
-		{8, "s4 cab", "Audi", "s4 cabriolet"},
-		{9, "serie5", "BMW", "serie 5"},
-		{10, "s4", "Audi", "s4"},
+		{0, "Gran Turismo Série5", "BMW", "Serie 5"},
+		{1, "ds 3 crossback", "Citroen", "Ds3"},
+		{2, "crossback ds 3", "Citroen", "Ds3"},
+		{3, "test avant", "Audi", "S4 Avant"},
+		{4, "s4 avant", "Audi", "S4 Avant"},
+		{5, "avant s4", "Audi", "S4 Avant"},
+		{6, "cabr", "Audi", "Cabriolet"},
+		{7, "s4 av", "Audi", "S4 Avant"},
+		{8, "s4 cab", "Audi", "S4 Cabriolet"},
+		{9, "serie5", "BMW", "Serie 5"},
+		{10, "s4", "Audi", "S4"},
 	}
 
 	for i := range tests {

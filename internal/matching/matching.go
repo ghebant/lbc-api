@@ -90,6 +90,8 @@ func ComputeKeywordsScores(carModel string, keywords []string) []models.KeywordW
 
 	carModelKeywords := strings.Split(carModel, " ")
 
+	averages := make(chan float64)
+
 	for i := range keywords {
 		bestAverage := 0.0
 
@@ -99,22 +101,27 @@ func ComputeKeywordsScores(carModel string, keywords []string) []models.KeywordW
 
 		for j := range carModelKeywords {
 
-			// Compute the distance between a search keyword and a keyword from the car model
-			distance := levenshtein.Levenshtein(keywords[i], carModelKeywords[j])
+			go func(carModelKeyword, searchKeyword string) {
+				// Compute the distance between a search keyword and a keyword from the car model
+				distance := levenshtein.Levenshtein(searchKeyword, carModelKeyword)
 
-			// Compute how much percentage of the search keyword matches the car model keyword based on there distance
-			matchingPercentage := ComputeMatchingPercentage(len(carModelKeywords[j]), distance)
+				// Compute how much percentage of the search keyword matches the car model keyword based on there distance
+				matchingPercentage := ComputeMatchingPercentage(len(carModelKeyword), distance)
 
-			// Returns a percentage based on how many characters in a row they have in common since index 0
-			percentageCharactersMatching := ComputeCharactersMatching(keywords[i], carModelKeywords[j])
+				// Returns a percentage based on how many characters in a row they have in common since index 0
+				percentageCharactersMatching := ComputeCharactersMatching(searchKeyword, carModelKeyword)
 
-			// Calculate the weight of a keyword based on its length
-			weight := CalculateKeywordWeight(keywords[i])
+				// Calculate the weight of a keyword based on its length
+				weight := CalculateKeywordWeight(searchKeyword)
 
-			globalAverage := ((matchingPercentage * weight) + (percentageCharactersMatching * weight) + mpFromModel) / 3
+				globalAverage := ((matchingPercentage * weight) + (percentageCharactersMatching * weight) + mpFromModel) / 3
 
-			if globalAverage > bestAverage {
-				bestAverage = globalAverage
+				averages <- globalAverage
+			}(carModelKeywords[j], keywords[i])
+
+			average := <-averages
+			if average > bestAverage {
+				bestAverage = average
 			}
 
 		}
