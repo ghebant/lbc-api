@@ -1,7 +1,7 @@
 version: "3.9"
 
 services:
-  db:
+  db_test:
     image: mysql:8.0
     container_name: lbc-api_db
     ports:
@@ -11,10 +11,13 @@ services:
       - configuration/env/dev.env
     cap_add:
       - SYS_NICE
+    environment:
+      MYSQL_DATABASE: 'lbc-api_test'
     healthcheck:
       test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
       timeout: 20s
       retries: 10
+
 
   lbc-api:
     build:
@@ -27,6 +30,10 @@ services:
       - ./:/go/lbc-api
     env_file:
       - configuration/env/dev.env
+    environment:
+      MYSQL_DATABASE: 'lbc-api_test'
+      MYSQL_HOST: 'db_test'
+    entrypoint: ['go', 'test', '-cover', './...', '-coverprofile', './reports/coverage.out', '-coverpkg', './...']
     depends_on:
-      db:
+      db_test:
         condition: service_healthy

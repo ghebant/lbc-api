@@ -1,24 +1,33 @@
 package main
 
 import (
-	"fmt"
+	"ghebant/lbc-api/internal/handlers"
+	"ghebant/lbc-api/internal/helpers"
+	_ "github.com/go-sql-driver/mysql"
 	"log"
-	"net/http"
 	"os"
 )
 
 func main() {
-	fmt.Println("Hello, world.")
-	http.HandleFunc("/", Health)
+	db, err := helpers.InitDB()
+	defer db.Close()
 
-	err := http.ListenAndServe(os.Getenv("PORT"), nil)
+	if err != nil {
+		log.Fatalf("Failed connect to database: %s", err)
+	}
+
+	log.Println("Connected to DB successfully")
+
+	err = helpers.CreateTables(db)
+	if err != nil {
+		log.Fatalf("Failed to initialize to database: %s", err)
+	}
+
+	router := handlers.SetupRouter(db)
+	log.Println("Running !")
+
+	err = router.Run(os.Getenv("PORT"))
 	if err != nil {
 		log.Fatalln(err)
 	}
-}
-
-func Health(w http.ResponseWriter, r *http.Request) {
-	// TODO Remove
-	log.Println("/health !")
-	w.WriteHeader(http.StatusOK)
 }
