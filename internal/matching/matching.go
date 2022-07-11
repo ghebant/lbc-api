@@ -16,18 +16,20 @@ func FindBestMatch(search string, Vehicles *map[string][]string) models.Match {
 
 	for carBrand, carModels := range *Vehicles {
 		for _, carModel := range carModels {
-			carModel = helpers.NormalizeString(carModel)
+			normalizedCarModel := helpers.NormalizeString(carModel)
 
-			match := ComputeMatch(search, carModel)
+			match := ComputeMatch(search, normalizedCarModel)
 
 			if match.AverageMatchingPercent == 1000 {
 				match.Brand = carBrand
+				match.Model = carModel
 				return match
 			}
 
 			if match.AverageMatchingPercent > currentBestMatch.AverageMatchingPercent {
 				currentBestMatch = match
 				currentBestMatch.Brand = carBrand
+				currentBestMatch.Model = carModel
 			}
 		}
 	}

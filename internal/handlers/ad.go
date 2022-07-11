@@ -39,6 +39,7 @@ func GetAd(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		// Find all ads
 		queryRes, err := db.Query("SELECT * FROM ad")
 		if err != nil {
 			log.Println("error failed to query db:", err)
@@ -85,32 +86,44 @@ func PostAd(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
+		errMsg := ""
+		errorCategory := false
+
 		switch payload.Category {
 		case constants.Automobile:
 			if payload.Automobile == nil {
-				log.Println("automobile cannot be nil")
-				c.JSON(http.StatusBadRequest, gin.H{"message": "failed to create ad: automobile cannot be nil"})
-				return
+				errorCategory = true
+				errMsg = "automobile cannot be nil"
 			}
-
 		case constants.RealEstate:
 			if payload.RealEstate == nil {
-				log.Println("real estate cannot be nil")
-				c.JSON(http.StatusBadRequest, gin.H{"message": "failed to create ad: real estate cannot be nil"})
-				return
+				errorCategory = true
+				errMsg = "real estate cannot be nil"
 			}
 		case constants.Job:
 			if payload.Job == nil {
-				log.Println("job cannot be nil")
-				c.JSON(http.StatusBadRequest, gin.H{"message": "failed to create ad: job cannot be nil"})
-				return
+				errorCategory = true
+				errMsg = "job cannot be nil"
 			}
 		default:
-			log.Println("wrong category provided")
-			c.JSON(http.StatusBadRequest, gin.H{"message": "failed to create ad: wrong category provided"})
+			errorCategory = true
+			errMsg = "wrong category provided"
+		}
+
+		if errorCategory {
+			log.Println(errMsg)
+			c.JSON(http.StatusBadRequest, gin.H{"message": "failed to create ad: " + errMsg})
 			return
 		}
 
+		txn, err := db.Begin()
+		if err != nil {
+			log.Println("error failed to start transaction:", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"message": "error failed to start transaction"})
+			return
+		}
+
+		// Insert Ad
 		res, err := db.Exec("INSERT INTO ad(title, content, category) VALUES (?, ?, ?)", payload.Title, payload.Content, payload.Category)
 		if err != nil {
 			log.Println("error failed to insert ad in db:", err)
@@ -118,7 +131,6 @@ func PostAd(db *sql.DB) gin.HandlerFunc {
 			return
 		}
 
-		// Return created ad
 		lastId, _ := res.LastInsertId()
 
 		ad, err := helpers.FindAdById(db, int(lastId))
@@ -133,7 +145,7 @@ func PostAd(db *sql.DB) gin.HandlerFunc {
 			autoMobile, err := helpers.InsertAndReturnAutomobile(ad.ID, payload.Automobile, db)
 			if err != nil {
 				log.Println(err.Error())
-				_, _ = db.Exec("DELETE FROM ad WHERE ad_id = ?", ad.ID)
+				txn.Rollback()
 				c.JSON(http.StatusInternalServerError, gin.H{"message": err.Error()})
 				return
 			}

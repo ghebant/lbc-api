@@ -36,103 +36,149 @@ curl -i -H 'Accept: application/json' http://localhost:8000/ads
 #### Response
 ```
 HTTP/1.1 200 OK
-Content-Type: application/json
-Date: Sat, 09 Jul 2022 10:00:56 GMT
-Content-Length: 146
+Content-Type: application/json; charset=utf-8
+Date: Mon, 11 Jul 2022 07:10:06 GMT
+Content-Length: 270
 
 [
    {
       "ad_id":1,
       "title":"ad title",
       "content":"content",
-      "category":"category",
-      "created_at":"2022-07-09T10:00:34Z",
-      "updated_at":"2022-07-09T10:00:34Z"
+      "category":1,
+      "automobile":{
+         "id":1,
+         "ad_id":1,
+         "brand":"Audi",
+         "model":"Rs4",
+         "created_at":"2022-07-11T07:08:41Z",
+         "updated_at":"2022-07-11T07:08:41Z"
+      },
+      "created_at":"2022-07-11T07:08:41Z",
+      "updated_at":"2022-07-11T07:08:41Z"
    }
 ]
 ```
 
-### Create an ad
+### Create an ad with automobile category
 `POST /ads`
 ```bash
-curl -i -X POST -H 'Accept: application/json' http://localhost:8000/ads -d '{"title": "ad title","category": "category","content": "content"}}' 
+curl -i -X POST -H 'Accept: application/json' http://localhost:8000/ads -d '{
+	"title": "ad title",
+	"content": "content",
+    "category": 1,
+    "automobile": {
+        "brand": "Audi",
+        "model": "Rs4"
+    }
+}' 
 ```
 #### Response
 ```
 HTTP/1.1 201 Created
 Content-Type: application/json; charset=utf-8
-Date: Sat, 09 Jul 2022 10:06:41 GMT
-Content-Length: 144
+Date: Mon, 11 Jul 2022 07:08:41 GMT
+Content-Length: 268
 
 {
-   "ad_id":2,
+   "ad_id":1,
    "title":"ad title",
    "content":"content",
-   "category":"category",
-   "created_at":"2022-07-09T10:05:30Z",
-   "updated_at":"2022-07-09T10:05:30Z"
+   "category":1,
+   "automobile":{
+      "id":1,
+      "ad_id":1,
+      "brand":"Audi",
+      "model":"Rs4",
+      "created_at":"2022-07-11T07:08:41Z",
+      "updated_at":"2022-07-11T07:08:41Z"
+   },
+   "created_at":"2022-07-11T07:08:41Z",
+   "updated_at":"2022-07-11T07:08:41Z"
 }
 ```
 
 ### Get ad with id
 `GET /ads/{id}`
 ```bash
-curl -i -H 'Accept: application/json' http://localhost:8000/ads/2 
+curl -i -H 'Accept: application/json' http://localhost:8000/ads/1
 ```
 #### Response
 ```
 HTTP/1.1 200 OK
-Content-Type: application/json
-Date: Sat, 09 Jul 2022 10:08:04 GMT
-Content-Length: 144
+Content-Type: application/json; charset=utf-8
+Date: Mon, 11 Jul 2022 07:11:17 GMT
+Content-Length: 268
 
 {
-   "ad_id":2,
+   "ad_id":1,
    "title":"ad title",
    "content":"content",
-   "category":"category",
-   "created_at":"2022-07-09T10:05:30Z",
-   "updated_at":"2022-07-09T10:05:30Z"
+   "category":1,
+   "automobile":{
+      "id":1,
+      "ad_id":1,
+      "brand":"Audi",
+      "model":"Rs4",
+      "created_at":"2022-07-11T07:08:41Z",
+      "updated_at":"2022-07-11T07:08:41Z"
+   },
+   "created_at":"2022-07-11T07:08:41Z",
+   "updated_at":"2022-07-11T07:08:41Z"
 }
 ```
 
 ### Update an ad
 `UPDATE /ads/{id}`
 ```bash
-curl -i -X PUT -H 'Accept: application/json' http://localhost:8000/ads/2 -d '{"title": "ad title modified","category": "category","content": "content"}}' 
+curl -i -X PUT -H 'Accept: application/json' http://localhost:8000/ads/1 -d '{
+	"title": "ad BMW",
+	"content": "super car !",
+    "category": 1,
+    "automobile": {
+        "brand": "BMW",
+        "model": "M3"
+    }
+}' 
 ```
 #### Response
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
-Date: Sat, 09 Jul 2022 10:11:41 GMT
-Content-Length: 153
+Date: Mon, 11 Jul 2022 07:13:31 GMT
+Content-Length: 268
 
 {
-   "ad_id":2,
-   "title":"ad title modified",
-   "content":"content",
-   "category":"category",
-   "created_at":"2022-07-09T10:05:30Z",
-   "updated_at":"2022-07-09T10:11:42Z"
+   "ad_id":1,
+   "title":"ad BMW",
+   "content":"super car !",
+   "category":1,
+   "automobile":{
+      "id":1,
+      "ad_id":1,
+      "brand":"BMW",
+      "model":"M3",
+      "created_at":"2022-07-11T07:08:41Z",
+      "updated_at":"2022-07-11T07:13:31Z"
+   },
+   "created_at":"2022-07-11T07:08:41Z",
+   "updated_at":"2022-07-11T07:13:32Z"
 }
 ```
 
 ### Delete an ad
 `DELETE /ads/{id}`
 ```bash
-curl -i -X DELETE -H 'Accept: application/json' http://localhost:8000/ads/2
+curl -i -X DELETE -H 'Accept: application/json' http://localhost:8000/ads/1
 ```
 #### Response
 ```
 HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
-Date: Sat, 09 Jul 2022 10:13:07 GMT
+Date: Mon, 11 Jul 2022 07:14:37 GMT
 Content-Length: 21
 
-{
-   "message":"deleted"
-}
+{"message":"deleted"}
 ```
 
 ## Search
@@ -150,12 +196,12 @@ Content-Length: 30
 
 {
    "brand":"Audi",
-   "model":"rs4"
+   "model":"Rs4"
 }
 ```
 
 # How search works ?
-For the matching part the Levenshtein distance algorithm has been used
+For the matching part the Levenshtein distance algorithm has been used combined with multiple percentages calculated for every keyword matching a car model
 ## Levenshtein Algorithm
 The Levenshtein distance is a string metric for measuring difference between two sequences. Informally, the Levenshtein distance between two words is the minimum number of single-character edits (i.e. insertions, deletions or substitutions) required to change one word into the other.
 ### Example
@@ -168,27 +214,39 @@ The Levenshtein distance between "kitten" and "sitting" is 3 because it needs no
 ## The Matching algorithm
 1. First **iterate** over **all car models**
 2. **Normalize** both the **search input** and the **car model** (lowercase, trim spaces etc...)
-3. For each searched keyword **compute the Levenshtein distance** to every car model 
-4. Use that distance to calculate a **matching percentage** with the car model length and the number of changes necessary to transform the keyword into the model
-5. All the search keyword's matching percentage combines makes an **average matching percentage** of the whole search input
-6. Return the car model which as the **best average matching percentage** with the searched input
+3. Split the **search input** and the **car model** into **keywords**, then for each keyword:
+   1. Compute the **Levenshtein distance** between the **search keyword** and the **whole car model**, then calculate a **matching percentage** from it with the **total car length**
+   2. **Compute the Levenshtein distance** to every car model keyword
+   3. Use that distance to calculate a **matching percentage** with the **car keyword length**
+   4. Calculate a **percentage** of how many **characters in a row** both keywords have **in common** since index 0
+   5. Calculate a **weight** based on the search keyword length (so that longer words have more weight when they will be multiplied by their matching percentage)
+   6. Then calculate a **global matching percentage** of the given search input for the car model based on all the percentages calculated
+4. Return the car model which as the **best average matching percentage** with the searched input
 
 ### Example
 ```
 Search Input: ds 3 crossback
 ```
 ```
-1.   car model :                                   s3
-2.   search keywords:                        ds   3   crossback
-3.   Levenshtein distance from car model :    2   1       8
-4.   Matching percentage:                     0% 50%      0%
-5.   Average matching percentage:                  16.66%
+1.   car model :                                       s3
+2.   search keywords:                           ds      3   crossback
+3.1 .Matching percentage whole car model:       0%     50%    0%
+3.2 .Levenshtein distance from car keyword :    2       1     8
+3.3 .Matching percentage :                      0%     50%    0%
+3.4 .Percentage characters in row matching :    0%     0%     0%
+3.5 .Calculate weight :                        1.4     1     2.8
+3.6 .Global keyword matching percentage:        0%   33.33%   0%
+4.   Average matching percentage:                     11.11%
 
-1.   car model :                                   ds3
-2.   search keywords:                        ds   3   crossback
-3.   Levenshtein distance from car model :    1   2       8
-4.   Matching percentage:                     67% 34%     0%
-5.   Average matching percentage:                  33.66%
+1.   car model :                                       ds3
+2.   search keywords:                           ds      3   crossback
+3.1 .Matching percentage whole car model:     66.67%  33.33%    0%
+3.2 .Levenshtein distance from car keyword :    1       2       8
+3.3 .Matching percentage :                    66.67%  33.33%    0%
+3.4 .Percentage characters in row matching :  66.67%    0%      0%
+3.5 .Calculate weight :                        1.4      1      2.8
+3.6 .Global keyword matching percentage:      84.44%  22.22%    0%
+4.   Average matching percentage:                     35.56%
 
-6. Best match = ds3 : 33.66%
+6. Best match = ds3 : 35.56%
    ```
